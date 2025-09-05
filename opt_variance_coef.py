@@ -1,4 +1,18 @@
+import numpy as np
+
+import scipy as sc
+from scipy import io
+from scipy import optimize
+import states_functions as sf
+
 # Optimal coefficients functions for variance optimisation
+
+def variance_pc (probs, coefs):
+    # variance from choice of coefficients and probability ditribution
+    c2 = coefs**2
+    return probs@c2 -(probs@coefs)**2
+
+                ##-----##
 
 def nnz_probs(povm_mat, flat_rho):
     # finds probabilities of a given (flattened) state by projecting on the POVM effects. 
@@ -28,14 +42,16 @@ def opt_invmat_state ( povm_mat, probs):
     
     return dmat@povm_mat@sc.linalg.inv(povm_mat.T @ dmat @ povm_mat)
 
+                ##-----##
 
 def opt_coef_state (povm_mat, flat_obs, flat_rho):
     # optimal coefficients for the variance (and shadow norm) for a set of probabilities (fixed state)
     probs = nnz_probs(povm_mat, flat_rho)
-    lmat = opt_inv_state(povm_mat, probs)
+    lmat = opt_invmat_state(povm_mat, probs)
     
     return lmat@flat_obs
 
+                ##-----##
 
 def opt_sn_state (povm_mat, flat_obs, flat_rho):
     # optimal shadow norm (first term in variance) given an observable and a particular state
@@ -47,3 +63,40 @@ def opt_sn_state (povm_mat, flat_obs, flat_rho):
     
     return np.real(np.conj(coefs)@dmat@coefs) # this should always be positive, reality imposed to ignore null imaginary part in function handling
 
+                ##-----##
+
+def var_state_optimisation (x, povm_mat, basis_mat, flat_obs):
+    # actual optimisation target function, constructing the state from the free parameters and estimates the variance 
+    # using the optimal coefficients
+    rho_flat = sf.flat_state_from_mat (x, basis_mat) # adapts free variables into a density matrix (in proper subspace)
+    
+    return - opt_sn_state(povm_mat, flat_obs, rho_flat) + np.real((rho_flat@flat_obs)**2)
+
+                ##-----##
+
+def variance_optimisation(povm_cm, basis_m ,observable):
+    # the real heart of the module, where the magic actually happens
+    # takes as input - the POVM coefficient matrix
+    #                - the proper basis matrix
+    #                - the target observable
+    
+    d = len(observable)  # this is a matrix, so this is dimension of *vector* space
+    D = d**2
+    flatobs = sf.flatten_in_basis(observable, basis_m)
+    
+    x0 = np.ones(D)/(D) # "maximally mixed" initial condition
+
+    res = sc.optimize.minimize(var_state_optimisation, 
+                                x0, 
+                                args=(povm_cm, basis_m, flatobs),
+                                method='powell',
+                                tol = 10e-5
+                            )
+    
+    xs = res.x
+    flat_rhos = sf.flat_state_from_mat(xs, basis_m) # optimal state
+    ocs  = opt_coef_state(povm_cm, flatobs, flat_rhos)
+    rhos = np.reshape(basis_m@flat_rhos,(d,d))
+    var  = -res.fun
+    
+    return res
