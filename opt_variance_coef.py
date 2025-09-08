@@ -7,17 +7,41 @@ import states_functions as sf
 
 # Functions for the construction and optimisation of the optimal variance of a target observable given a specific POVM
 # Requires "states_function" module for some optimised functions
-## variance_pc:            returns the variance given a set of coefficients and probability distribution
-## nnz_probs:              given a fixed state, returns the expected probability distribution with a slight variation (<0.1%) to guarantee there are no zero probabilities
-## opt_invmat_state:       given a target observable returns the optimal estimator matrix  for a fixed state
-## opt_coef_state:         given a target observable returns the optimal coefficients for a fixed state
-## opt_sn_state:           given a target observable returns the optimal shadow norm for a fixed state
-## var_state_optimisation: handles the optimisation of the variance for given target observable, also returns maximal state and optimal coefficients
+## variance_pc:               returns the variance given a set of coefficients and probability distribution
+## variance_coef_state:       returns the variance given a set of coefficients and fixed state
+## variance_coef_frevars:     analogue to previous, but construct state from free real variables (specific for optimisation)
+## nnz_probs:                 given a fixed state, returns the expected probability distribution with a slight variation (<0.1%) to guarantee there are no zero probabilities
+## opt_invmat_state:          given a target observable returns the optimal estimator matrix  for a fixed state
+## opt_coef_state:            given a target observable returns the optimal coefficients for a fixed state
+## opt_sn_state:              given a target observable returns the optimal shadow norm for a fixed state
+## var_state_optimisation:    receives as input the free variables, returns the optimal *variance* (relies on opt_sn_state)
+## variance_optimisation:     handles the optimisation of the variance for given target observable, also returns maximal state and optimal coefficients
+## fix_coef_var_optimisation: optimisation of variance for fixed set of coefficients (therefore maximisation on state)
 
 def variance_pc (probs, coefs):
-    # variance from choice of coefficients and probability ditribution
+    # variance from choice of coefficients and probability distribution
     c2 = coefs**2
     return probs@c2 -(probs@coefs)**2
+
+                ##-----##
+
+def variance_coef_state (state, povm_mat, coefs):
+    # variance from choice of coefficients and fixed state
+    # probability distribution is obtained directly from the state:
+    probs = nnz_probs(povm_mat, state)
+    
+    return variance_pc(probs, coefs)
+
+                ##-----##
+    
+def variance_coef_freevars (x, povm_mat, basis_mat, coefs):
+    # *negative variance* from choice of coefficients and free variables (specific for fix_coef_var_optimisation)
+    # (negativity imposed to turn concave function into convex for minimisation)
+    
+    state = sf.flat_state_from_mat (x, basis_mat) # adapts free variables into a density matrix (in proper subspace)
+    probs = nnz_probs(povm_mat, state)            # returns probability ditribution given the reconstructed state
+    
+    return -variance_pc(probs, coefs)
 
                 ##-----##
 
@@ -42,7 +66,7 @@ def nnz_probs(povm_mat, flat_rho):
 
                 ##-----##
 
-def opt_invmat_state ( povm_mat, probs):
+def opt_invmat_state (povm_mat, probs):
     # optimal estimator matrix for a given fixed state, given its projection on the POVM effects
     # represents a variation of usual Moore-Penrose pseudo-inverse
     dmat = np.diag(np.reciprocal(probs))
@@ -106,4 +130,31 @@ def variance_optimisation(povm_cm, basis_m ,observable):
     rhos = np.reshape(basis_m@flat_rhos,(d,d))
     var  = -res.fun
     
-    return res
+    return [var, rhos, ocs]
+
+                ##-----##
+
+def fix_coef_var_optimisation(povm_cm, basis_m, coefs):
+    # given an already valid set of coefficients, returns the maximal variance for that particular decomposition
+    # takes as input - the POVM coefficient matrix
+    #                - the proper basis matrix
+    #                - the coefficients chosen (these contain information about the target observable)
+    
+    D = max(basis_m.shape)  # dimension of HS space
+    d = int(np.sqrt(D))
+    
+    x0 = np.ones(D)/(D) # "maximally mixed" initial condition
+
+    res = sc.optimize.minimize(variance_coef_freevars, 
+                                x0, 
+                                args=(povm_cm, basis_m, coefs),
+                                method='powell',
+                                tol = 10e-5
+                            )
+    
+    xs = res.x
+    flat_rhos = sf.flat_state_from_mat(xs, basis_m) # optimal state
+    rhos = np.reshape(basis_m@flat_rhos,(d,d))
+    var  = -res.fun
+    
+    return [var, rhos]

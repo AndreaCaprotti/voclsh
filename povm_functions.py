@@ -1,4 +1,5 @@
 import numpy as np
+import scipy as sc
 
 # additional useful functions for POVm generation and handling
 ## tensor_same:       returns tensor product of the same object N times iteratively - both single ob servables or full POVMs
@@ -39,17 +40,18 @@ def povm_coef_matrix (povm):
     can_coef_matrix = np.reshape(povm,(n,d**2))  # basically flattens all effects
                                             # simply flattening works, as long as it's consistent
         
-    [U,S,Vh]=np.linalg.svd(can_coef_matrix) # SVD of canonical matrix, to determine the dimension of subspace
+    [U,S,Vh]=sc.linalg.svd(can_coef_matrix) # SVD of canonical matrix, to determine the dimension of subspace
 
     nz = len(np.where(np.round(S,10)>0)[0]) # counting non-zero eigenvalues, which corresponds to the dimension
                                             # of the subspace spanned by the POVM
 
     # selection of the basis matrix as the set of valid eigenstates from V matrix
     if nz < D:
-        bm = np.round(Vh[:nz,:].T,16) # just to exclude floating point errors
+        bm = Vh[:nz].T # just to exclude floating point errors
     else:
         bm = np.eye(D)
-
+    # basis matrix now collects a valid orthonormal basis as its *columns*
+        
     pcm = can_coef_matrix@bm
     return pcm, bm
 
