@@ -56,10 +56,10 @@ import povm_functions as pf      # POVM generation and handling related function
 # global variables
 single_povm = pf.pauli_povm_single('X','Z') # single qubit plane POVM
 
-density = 30  # number of different projectors considered
+density = 100  # number of different projectors considered
 
 N_min = 1     # minimal dimension considered
-N_max = 2     # maximal dimension considered
+N_max = 10    # maximal dimension considered
 
 # saving directory (created if non-existing)
 directory= 'plane_proj_XZ'
@@ -67,6 +67,13 @@ os.system(f'mkdir {directory}')
 # -
 
 # # Cycle over different dimensions
+
+# +
+all_vec = []
+all_can = []
+
+min_vec = []
+avg_vec = []
 
 for N in range(1,N_max+1):
     filename = directory+f'_{N}' # just to be clear, file name is the same as directory
@@ -95,5 +102,51 @@ for N in range(1,N_max+1):
 
         var_vec.append(var)
     np.save(f'{directory}/{filename}_opt',var_vec)
+    
+    all_vec.append(var_vec)
+    all_can.append(var_can)
+    min_vec.append(min(var_vec))
+    vv = np.array(var_vec)
+    avg_vec.append(np.average(vv))
+# -
+
+# # Plots
+# Let's make now something pretty to concisely see the results
+
+# +
+color_lite = [  'xkcd:azure', 'xkcd:kelly green','xkcd:bright orange','xkcd:red', 'xkcd:lavender', 'xkcd:golden yellow','xkcd:maroon','xkcd:light grey','xkcd:robin egg blue', 'xkcd:medium brown'] # most similar to std plt pallet
+color_lite_dark = ['xkcd:royal blue',  'xkcd:forest green','xkcd:burnt orange', 'xkcd:scarlet', 'xkcd:violet', 'xkcd:mustard','xkcd:steel grey','xkcd:bright sky blue','xkcd:earth'] # most similar to std plt pallet
+
+thetas = np.pi*np.arange(density)/(2*density)
+
+nrow = 1
+ncol = 3
+fig,ax = plt.subplots(nrow, ncol, figsize=[ncol*imagewidth,nrow*imagewidth/goldenratio])
+
+ax[0].set_title('Optimal variance')
+ax[1].set_title('ratio with canonical case')
+ax[0].set_ylabel(r'Var')
+ax[1].set_ylabel(r'Var$_{opt}/$ Var$_{can}/$')
+ax[0].set_xlabel(r'$\theta$')
+ax[1].set_ylabel(r'$\theta$')
+
+
+for N in range(N_max):
+    ax[0].plot(thetas, all_vec[N], c= color_lite[N],label=f'{N+1} qubits')
+    ax[0].hlines(all_can[N],0,np.pi/2,color = color_lite_dark[N], linestyle='--')
+    
+    ax[1].plot(thetas, all_vec[N]/all_can[N], c= color_lite[N], label=f'{N+1} qubits')
+    
+ax[2].set_title('scaling with number of qubits')
+ax[2].plot(np.arange(1,N_max+1), min_vec, marker='o', label='best optimal scaling')
+ax[2].plot(np.arange(1,N_max+1), avg_vec, marker='x',linestyle='--',label='average optimal scaling')
+ax[2].plot(np.arange(1,N_max+1), all_can, marker='^',linestyle=':',label='canonical scaling')
+    
+ax[2].set_ylabel('min Var')
+ax[2].set_xlabel('# qubits')
+
+    
+plt.savefig(f'{directory}/plane_proj.pdf', transparent=True, bbox_inches='tight')
+# -
 
 
