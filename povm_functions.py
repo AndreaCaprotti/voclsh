@@ -13,7 +13,7 @@ def tensor_same (povm, N):
     # check to avoid mistakes, with cheeky remark
     N=int(N)
     if N==1:
-        print('Single POVM, why did you even call this function in the first place?')
+        #print('Single POVM, why did you even call this function in the first place?')
         return povm
     elif (N<1):
         raise ValueError('Invalid value for repetition of tensor product')
