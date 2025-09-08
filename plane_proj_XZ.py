@@ -59,7 +59,7 @@ single_povm = pf.pauli_povm_single('X','Z') # single qubit plane POVM
 density = 100  # number of different projectors considered
 
 N_min = 1     # minimal dimension considered
-N_max = 10    # maximal dimension considered
+N_max = 2    # maximal dimension considered
 
 # saving directory (created if non-existing)
 directory= 'plane_proj_XZ'
@@ -75,7 +75,7 @@ all_can = []
 min_vec = []
 avg_vec = []
 
-for N in range(1,N_max+1):
+for N in range(1, N_max+1):
     filename = directory+f'_{N}' # just to be clear, file name is the same as directory
     # tensor POVM definition
     povm = pf.tensor_same(single_povm, N)

@@ -20,8 +20,8 @@ def tensor_same (povm, N):
     else:
         new_povm = np.kron(povm,povm) # first step, common for any input
         if N > 2:                     # repetition for higher dimensions
-            for i in range(N-1):
-                new_p = np.kron (povm, new_povm)
+            for i in range(N):
+                new_povm = np.kron (povm, new_povm)
         
         return new_povm
     
