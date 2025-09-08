@@ -20,8 +20,8 @@ import states_functions as sf
 
 def variance_pc (probs, coefs):
     # variance from choice of coefficients and probability distribution
-    c2 = coefs**2
-    return probs@c2 -(probs@coefs)**2
+    c2 = np.conj(coefs)*coefs
+    return probs@c2 -np.real((probs@coefs))**2
 
                 ##-----##
 
@@ -41,7 +41,7 @@ def variance_coef_freevars (x, povm_mat, basis_mat, coefs):
     state = sf.flat_state_from_mat (x, basis_mat) # adapts free variables into a density matrix (in proper subspace)
     probs = nnz_probs(povm_mat, state)            # returns probability ditribution given the reconstructed state
     
-    return -variance_pc(probs, coefs)
+    return -np.real(variance_pc(probs, coefs)) # real part imposed to avoid optimisation problems
 
                 ##-----##
 
