@@ -1,5 +1,11 @@
 import numpy as np
 
+# additional useful functions for POVm generation and handling
+## tensor_same:       returns tensor product of the same object N times iteratively - both single ob servables or full POVMs
+## povm_coef_matrix:  returns the coefficient matrix in the proper basis (and the basis matrix) of an input POVM
+## pauli_povm_single: returns POVM out of Pauli projectors for a single qubit (both plane or full POVMS)
+
+
 def tensor_same (povm, N):
     # takes the iterative tensor of the *same* object N times
     # can be used both for observables and POVMs (as long as they're arrays of objects)
@@ -18,6 +24,8 @@ def tensor_same (povm, N):
         
         return new_povm
     
+                ##-----##
+
 def povm_coef_matrix (povm):
     # returns the coefficient matrix expressed in the proper basis of the subspace spanned by the effects
     # also returns the same basis (to also express states and observables in the same basis)
@@ -44,6 +52,8 @@ def povm_coef_matrix (povm):
 
     pcm = can_coef_matrix@bm
     return pcm, bm
+
+                ##-----##
 
 def pauli_povm_single(*args):
     # returns the usual POVM of projectors of Pauli eigenstates

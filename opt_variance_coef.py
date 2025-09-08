@@ -5,7 +5,14 @@ from scipy import io
 from scipy import optimize
 import states_functions as sf
 
-# Optimal coefficients functions for variance optimisation
+# Functions for the construction and optimisation of the optimal variance of a target observable given a specific POVM
+# Requires "states_function" module for some optimised functions
+## variance_pc:            returns the variance given a set of coefficients and probability distribution
+## nnz_probs:              given a fixed state, returns the expected probability distribution with a slight variation (<0.1%) to guarantee there are no zero probabilities
+## opt_invmat_state:       given a target observable returns the optimal estimator matrix  for a fixed state
+## opt_coef_state:         given a target observable returns the optimal coefficients for a fixed state
+## opt_sn_state:           given a target observable returns the optimal shadow norm for a fixed state
+## var_state_optimisation: handles the optimisation of the variance for given target observable, also returns maximal state and optimal coefficients
 
 def variance_pc (probs, coefs):
     # variance from choice of coefficients and probability ditribution

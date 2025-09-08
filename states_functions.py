@@ -10,10 +10,14 @@ def qubit (theta, phi):
     vec = np.array([np.cos(theta/2), np.exp(1j*phi)*np.sin(theta/2)])
     return np.round(np.outer(vec,np.conj(vec)),10)
 
+                ##-----##
+
 def flatten_in_basis(obs,bm):
     # returns flattened versions of observable (even density matrices) 
     return np.conj(bm.T)@(obs.flatten())
                    
+                ##-----##
+
 def flat_state_from_mat (x, basis_mat):
     # generates a (flattened) quantum states from an array of free parameters interpreted as the
     # real and imaginary part of a trinagular matrix, used to generate the state
