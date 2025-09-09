@@ -56,10 +56,10 @@ import povm_functions as pf      # POVM generation and handling related function
 # global variables
 single_povm = pf.pauli_povm_single('X','Z') # single qubit plane POVM
 
-density = 100  # number of different projectors considered
+density = 2  # number of different projectors considered
 
-N_min = 1     # minimal dimension considered
-N_max = 2    # maximal dimension considered
+N_min = 3     # minimal dimension considered
+N_max = 5    # maximal dimension considered
 
 # saving directory (created if non-existing)
 directory= 'plane_proj_XZ'
@@ -75,7 +75,10 @@ all_can = []
 min_vec = []
 avg_vec = []
 
+times = []
+
 for N in range(1, N_max+1):
+    time_start = time.time()
     filename = directory+f'_{N}' # just to be clear, file name is the same as directory
     # tensor POVM definition
     povm = pf.tensor_same(single_povm, N)
@@ -92,7 +95,7 @@ for N in range(1, N_max+1):
     # optimal upper bound on variance
     var_vec = []
     for j in range(density):
-        theta = j*np.pi/(2*density) # angle runs between 0 and \pi
+        theta = j*np.pi/(4*density) # angle runs between 0 and \pi/2 (then symmetry applies)
         phi = 0                     # we consider projectors on the prime meridian
         
         singleobs = sf.qubit(theta, phi)
@@ -108,6 +111,12 @@ for N in range(1, N_max+1):
     min_vec.append(min(var_vec))
     vv = np.array(var_vec)
     avg_vec.append(np.average(vv))
+    
+    time_N = time.time()
+    print(N, time_N-time_start)
+    times.append(time_N-time_start)
+    
+np.save(f'{directory}/time_log',times)
 # -
 
 # # Plots
